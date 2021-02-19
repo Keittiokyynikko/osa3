@@ -1,5 +1,9 @@
 const express = require('express')
 const app = express()
+
+var morgan = require('morgan')
+
+
 const requestLogger = (req, res, next) => {
     console.log('Method:', req.method)
     console.log('Path:', req.path)
@@ -9,7 +13,12 @@ const requestLogger = (req, res, next) => {
   }
 
 app.use(express.json())
-app.use(requestLogger)
+
+morgan.token('body', function(req,res) {return res.body})
+
+app.use(morgan('tiny'))
+
+
 
 let persons = [
     {
@@ -92,12 +101,12 @@ app.post('/api/persons', (req, res) => {
         const person = {
             name: body.name,
             number: body.number,
-            id: generateId()
+            id: generateId(),
         }
-    }
 
-    persons = persons.concat(person)
-    res.json(person)
+        persons = persons.concat(person)
+        res.json(person)
+    }
 })
 
 const unknownEndpoint = (req, res) => {
