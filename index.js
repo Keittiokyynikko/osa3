@@ -4,12 +4,29 @@ const app = express()
 const Contact = require('./models/contact')
 
 const cors = require('cors')
-app.use(cors())
 
+app.use(cors())
 app.use(express.static('build'))
+app.use(express.json())
 
 var morgan = require('morgan')
-const { request, response } = require('express')
+const { response } = require('express')
+
+//const { request, response } = require('express')
+
+
+const errorHandler = (error, req, res, next) => {
+    console.error(error.message)
+
+    if(error.name === 'CastError') {
+        return res.status(400).send({error: 'malformatted id'})
+    } else if(error.name === 'ValidationError') {
+        return res.status(400).json({error: error.message})
+    }
+
+    next(error)
+
+}
 
 
 const requestLogger = (req, res, next) => {
@@ -20,8 +37,9 @@ const requestLogger = (req, res, next) => {
     next()
   }
 
-app.use(express.json())
+
 app.use(requestLogger)
+
 
 morgan.token('method', (req, res) => req.method)
 morgan.token('path', (req, res) => req.path)
@@ -29,19 +47,6 @@ morgan.token('status', (req, res) => res.statusCode)
 morgan.token('body', (req, res) => req.body)
 
 app.use(morgan(':method - :path - :status - :body'))
-
-const errorHandler = (error, req, res, next) => {
-    console.error(error.message)
-
-    if(error.name === 'CastError') {
-        return res.status(400).send({error: 'malformatted id'})
-    }
-
-    next(error)
-
-}
-
-app.use(errorHandler)
 
 
 
@@ -68,7 +73,7 @@ app.get('/api/persons/:id', (req, res) => {
     })
 })
 
-app.post('/api/persons', (req, res,) => {
+app.post('/api/persons', (req, res, next) => {
     const body = req.body
     console.log(req.body)
 
@@ -90,14 +95,17 @@ app.post('/api/persons', (req, res,) => {
             number: body.number,
         }) 
 
-        person.save().then(savedPerson => {
-            res.json(savedPerson)
-        })
+        person.save()      
+            .then(savedPerson => savedPerson.toJSON())
+            .then(savedAndFormattedPerson => {
+                res.json(savedAndFormattedPerson)
+            })
+        .catch(error => next(error))
     }
 })
 
-app.put('api/persons/:id', (req, res, next) => {
-    const body = req.body
+app.put('/api/persons/:id', (request, response, next) => {
+    const body = request.body
 
     const person = {
         content: body.content,
@@ -113,17 +121,22 @@ app.put('api/persons/:id', (req, res, next) => {
 
 app.delete('/api/persons/:id', (req, res, next) => {
     const id = Number(req.params.id)
-    Contact.findByIdAndRemove(req.params.id).then(result => {
-    res.status(204).end()
+    Contact.findByIdAndRemove(req.params.id)
+    .then(result => {
+        res.status(204).end()
     })
     .catch(error => next(error))
 })
+
 
 const unknownEndpoint = (req, res) => {
     res.status(404).send({error: 'unknown endpoint'})
 }
 
+
 app.use(unknownEndpoint)
+
+app.use(errorHandler)
 
 
 const PORT = process.env.PORT
