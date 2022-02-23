@@ -14,7 +14,7 @@ const url =
 
 mongoose.connect(url, { useNewUrlParser: true, useUnifiedTopology: true, useFindAndModify: false, useCreateIndex: true })
 
-  const contactSchema = new mongoose.Schema({
+const contactSchema = new mongoose.Schema({
   content: String,
   number: String,
 })
@@ -29,16 +29,16 @@ const contact = new Contact({
 
 
 if(process.argv.length===5) {
-    contact.save().then(response => {
-        console.log('added ' + contact.content + ' ' + contact.number + ' to phonebook')
-        mongoose.connection.close()
-      })
+  contact.save().then(response => {
+    console.log('added ' + contact.content + ' ' + contact.number + ' to phonebook')
+    mongoose.connection.close()
+  })
 
 } else if(process.argv.length<4) {
-    Contact.find({}).then(result => {
-        result.forEach(contact => {
-          console.log(contact)
-        })
-        mongoose.connection.close()
-      })
+  Contact.find({}).then(result => {
+    result.forEach(contact => {
+      console.log(contact)
+    })
+    mongoose.connection.close()
+  })
 }
